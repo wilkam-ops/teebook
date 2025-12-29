@@ -52,7 +52,7 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <Ionicons name="golf" size={64} color="#10b981" />
-          <Text style={styles.title}>IvoirGolf</Text>
+          <Text style={styles.title}>TeeBook</Text>
           <Text style={styles.subtitle}>Bienvenue de retour</Text>
         </View>
 

@@ -79,27 +79,33 @@ def test_auth_endpoints():
     # Test user registration (might already exist)
     print("  📝 Testing user registration...")
     response = make_request("POST", "/auth/register", TEST_USER)
-    if response and response.status_code in [201, 400]:  # 400 if already exists
+    if response:
         if response.status_code == 201:
             print("  ✅ User registration successful")
-        else:
+        elif response.status_code == 400 and "already registered" in response.text:
             print("  ℹ️  User already exists (expected)")
-    else:
-        print(f"  ❌ User registration failed: {response.status_code if response else 'No response'}")
-        if response:
+        else:
+            print(f"  ❌ User registration failed: {response.status_code}")
             print(f"      Response: {response.text}")
+            return False
+    else:
+        print("  ❌ User registration failed: No response")
         return False
     
     # Test admin registration (might already exist)
     print("  📝 Testing admin registration...")
     response = make_request("POST", "/auth/register", TEST_ADMIN)
-    if response and response.status_code in [201, 400]:  # 400 if already exists
+    if response:
         if response.status_code == 201:
             print("  ✅ Admin registration successful")
-        else:
+        elif response.status_code == 400 and "already registered" in response.text:
             print("  ℹ️  Admin already exists (expected)")
+        else:
+            print(f"  ❌ Admin registration failed: {response.status_code}")
+            print(f"      Response: {response.text}")
+            return False
     else:
-        print(f"  ❌ Admin registration failed: {response.status_code if response else 'No response'}")
+        print("  ❌ Admin registration failed: No response")
         return False
     
     # Test user login
@@ -114,6 +120,8 @@ def test_auth_endpoints():
         print("  ✅ User login successful")
     else:
         print(f"  ❌ User login failed: {response.status_code if response else 'No response'}")
+        if response:
+            print(f"      Response: {response.text}")
         return False
     
     # Test admin login
@@ -128,6 +136,8 @@ def test_auth_endpoints():
         print("  ✅ Admin login successful")
     else:
         print(f"  ❌ Admin login failed: {response.status_code if response else 'No response'}")
+        if response:
+            print(f"      Response: {response.text}")
         return False
     
     # Test /auth/me with user token
@@ -143,6 +153,8 @@ def test_auth_endpoints():
             return False
     else:
         print(f"  ❌ /auth/me failed: {response.status_code if response else 'No response'}")
+        if response:
+            print(f"      Response: {response.text}")
         return False
     
     return True

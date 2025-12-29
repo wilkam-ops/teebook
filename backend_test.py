@@ -639,6 +639,8 @@ def test_authorization_scenarios():
         print("  ✅ No token access properly blocked")
     else:
         print(f"  ❌ No token check failed: {response.status_code if response else 'No response'}")
+        if response:
+            print(f"      Response: {response.text}")
         return False
     
     # Test access with invalid token
@@ -649,6 +651,8 @@ def test_authorization_scenarios():
         print("  ✅ Invalid token properly blocked")
     else:
         print(f"  ❌ Invalid token check failed: {response.status_code if response else 'No response'}")
+        if response:
+            print(f"      Response: {response.text}")
         return False
     
     return True

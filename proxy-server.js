@@ -5,24 +5,22 @@ const path = require('path');
 const app = express();
 const PORT = 3002;
 
-// Servir le dashboard admin build sur /admin
-app.use('/admin', express.static(path.join(__dirname, 'admin-dashboard/dist')));
-
-// Pour les routes SPA du dashboard, toujours servir index.html
-app.get('/admin*', (req, res, next) => {
-  // Si c'est un fichier statique (avec extension), laissez express.static le gérer
-  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    return next();
-  }
-  // Sinon, servir index.html pour le routing côté client
-  res.sendFile(path.join(__dirname, 'admin-dashboard/dist/index.html'));
-});
-
-// Proxy pour l'API backend
+// Proxy pour l'API backend en premier
 app.use('/api', createProxyMiddleware({
   target: 'http://localhost:8001',
   changeOrigin: true
 }));
+
+// Servir les fichiers statiques du dashboard
+app.use('/admin', express.static(path.join(__dirname, 'admin-dashboard/dist'), {
+  index: false,
+  fallthrough: true
+}));
+
+// Pour toutes les routes qui commencent par /admin, servir le SPA
+app.use('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-dashboard/dist/index.html'));
+});
 
 // Proxy pour l'application Expo (tout le reste)
 app.use('/', createProxyMiddleware({

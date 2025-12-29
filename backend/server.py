@@ -32,7 +32,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app
-app = FastAPI(title="IvoirGolf API")
+app = FastAPI(title="TeeBook API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")

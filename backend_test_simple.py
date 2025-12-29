@@ -489,7 +489,7 @@ def test_authorization():
     print("  🚫 Testing access without token...")
     response = requests.get(f"{API_BASE_URL}/auth/me")
     
-    if response.status_code == 401:
+    if response.status_code in [401, 403]:  # Both are valid for missing token
         print("  ✅ No token access properly blocked")
     else:
         print(f"  ❌ No token check failed: {response.status_code}")

@@ -86,6 +86,8 @@ def test_auth_endpoints():
             print("  ℹ️  User already exists (expected)")
     else:
         print(f"  ❌ User registration failed: {response.status_code if response else 'No response'}")
+        if response:
+            print(f"      Response: {response.text}")
         return False
     
     # Test admin registration (might already exist)

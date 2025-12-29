@@ -53,6 +53,7 @@ subscription_id = None
 def make_request(method, endpoint, data=None, headers=None, params=None):
     """Make HTTP request with error handling"""
     url = f"{API_BASE_URL}{endpoint}"
+    print(f"    🔗 {method} {url}")
     try:
         if method == "GET":
             response = requests.get(url, headers=headers, params=params, timeout=10)
@@ -63,6 +64,7 @@ def make_request(method, endpoint, data=None, headers=None, params=None):
         else:
             raise ValueError(f"Unsupported method: {method}")
         
+        print(f"    📊 Status: {response.status_code}")
         return response
     except requests.exceptions.RequestException as e:
         print(f"❌ Request failed: {e}")

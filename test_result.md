@@ -179,15 +179,18 @@ backend:
 
   - task: "TeeTime, Booking, Competition, Subscription APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "APIs créés mais non testés encore (Phase 2+). Besoin de tests complets par testing agent."
+      - working: true
+        agent: "testing"
+        comment: "Tests complets effectués avec succès. Tous les endpoints fonctionnent correctement: TeeTime CRUD (création/lecture/filtres), Booking CRUD avec gestion des slots, Competition registration/unregistration, Subscription CRUD, Admin endpoints avec dashboard stats. Scénarios testés: booking flow complet avec annulation et restauration des slots, competition flow avec inscription/désinscription, subscription flow, authorization tests. Toutes les validations métier fonctionnent (slots insuffisants, duplicate registration, unauthorized access). Dashboard stats: 2 users, 0 active bookings, 2 active subscriptions, 2 upcoming competitions."
 
 frontend:
   - task: "Auth Context & JWT Storage"

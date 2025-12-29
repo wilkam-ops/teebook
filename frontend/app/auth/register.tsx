@@ -72,7 +72,7 @@ export default function RegisterScreen() {
         <View style={styles.header}>
           <Ionicons name="golf" size={64} color="#10b981" />
           <Text style={styles.title}>Créer un compte</Text>
-          <Text style={styles.subtitle}>Rejoignez IvoirGolf</Text>
+          <Text style={styles.subtitle}>Rejoignez TeeBook</Text>
         </View>
 
         <View style={styles.form}>

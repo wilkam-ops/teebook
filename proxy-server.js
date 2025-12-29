@@ -8,8 +8,13 @@ const PORT = 3002;
 // Servir le dashboard admin build sur /admin
 app.use('/admin', express.static(path.join(__dirname, 'admin-dashboard/dist')));
 
-// Rediriger /admin vers /admin/index.html si c'est une route du dashboard
-app.get('/admin/*', (req, res) => {
+// Pour les routes SPA du dashboard, toujours servir index.html
+app.get('/admin*', (req, res, next) => {
+  // Si c'est un fichier statique (avec extension), laissez express.static le gérer
+  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    return next();
+  }
+  // Sinon, servir index.html pour le routing côté client
   res.sendFile(path.join(__dirname, 'admin-dashboard/dist/index.html'));
 });
 

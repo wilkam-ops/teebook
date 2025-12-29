@@ -284,8 +284,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "TeeTime, Booking, Competition, Subscription APIs - Besoin tests complets"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -293,3 +292,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Phase 1 complétée avec succès! Backend: authentification JWT, CRUD basique. Frontend: login/register, navigation tabs, profil. Tous les endpoints auth testés avec curl et fonctionnent. UI testée avec Playwright - navigation fluide. Prêt pour tests backend complets des endpoints TeeTime/Booking/Competition/Subscription."
+  - agent: "testing"
+    message: "Tests backend complets terminés avec succès! Tous les 9 suites de tests passent: Authentication (login/register/me), Courses (CRUD), TeeTime (CRUD + filtres), Bookings (CRUD + gestion slots), Booking Cancellation (avec restauration slots), Competitions (CRUD + registration/unregistration), Subscriptions (CRUD), Admin Endpoints (users/bookings/subscriptions/dashboard), Authorization (token validation). Scénarios métier validés: booking flow complet, competition flow, subscription flow. API entièrement fonctionnelle et prête pour production. Fichier de test créé: /app/backend_test_simple.py"

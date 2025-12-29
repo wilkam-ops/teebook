@@ -1,0 +1,568 @@
+#!/usr/bin/env python3
+"""
+IvoirGolf Backend API Test Suite - Simplified Version
+Tests all backend endpoints with realistic data
+"""
+
+import requests
+import json
+from datetime import datetime, timedelta
+import sys
+
+# Get backend URL from frontend .env
+try:
+    with open('/app/frontend/.env', 'r') as f:
+        for line in f:
+            if line.startswith('EXPO_PUBLIC_BACKEND_URL='):
+                BACKEND_URL = line.split('=')[1].strip()
+                break
+    API_BASE_URL = f"{BACKEND_URL}/api"
+except:
+    print("❌ Could not read backend URL from frontend/.env")
+    sys.exit(1)
+
+print(f"🔗 Testing API at: {API_BASE_URL}")
+
+# Test data
+TEST_USER = {
+    "email": "test@ivoirgolf.com",
+    "password": "test123",
+    "firstName": "Jean",
+    "lastName": "Dupont",
+    "handicapIndex": 15.5,
+    "role": "user"
+}
+
+TEST_ADMIN = {
+    "email": "admin@ivoirgolf.com", 
+    "password": "admin123",
+    "firstName": "Admin",
+    "lastName": "IvoirGolf",
+    "role": "admin"
+}
+
+# Global variables for tokens and IDs
+user_token = None
+admin_token = None
+course_id = None
+tee_time_id = None
+booking_id = None
+competition_id = None
+subscription_id = None
+
+def test_auth():
+    """Test authentication"""
+    global user_token, admin_token
+    
+    print("\n🔐 Testing Authentication...")
+    
+    # Test user login
+    print("  🔑 User login...")
+    response = requests.post(f"{API_BASE_URL}/auth/login", json={
+        "email": TEST_USER["email"],
+        "password": TEST_USER["password"]
+    })
+    
+    if response.status_code == 200:
+        user_token = response.json()["access_token"]
+        print("  ✅ User login successful")
+    else:
+        print(f"  ❌ User login failed: {response.status_code}")
+        return False
+    
+    # Test admin login
+    print("  🔑 Admin login...")
+    response = requests.post(f"{API_BASE_URL}/auth/login", json={
+        "email": TEST_ADMIN["email"],
+        "password": TEST_ADMIN["password"]
+    })
+    
+    if response.status_code == 200:
+        admin_token = response.json()["access_token"]
+        print("  ✅ Admin login successful")
+    else:
+        print(f"  ❌ Admin login failed: {response.status_code}")
+        return False
+    
+    # Test /auth/me
+    print("  👤 Testing /auth/me...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.get(f"{API_BASE_URL}/auth/me", headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+        if data["email"] == TEST_USER["email"]:
+            print("  ✅ /auth/me working correctly")
+        else:
+            print("  ❌ /auth/me returned wrong user")
+            return False
+    else:
+        print(f"  ❌ /auth/me failed: {response.status_code}")
+        return False
+    
+    return True
+
+def test_courses():
+    """Test courses endpoints"""
+    global course_id
+    
+    print("\n🏌️ Testing Courses...")
+    
+    # Test create course (admin)
+    print("  ➕ Creating course...")
+    course_data = {
+        "name": "Golf Club d'Abidjan Test",
+        "description": "Parcours de test pour les APIs",
+        "holesCount": 18
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.post(f"{API_BASE_URL}/courses", json=course_data, headers=headers)
+    
+    if response.status_code == 201:
+        course_id = response.json()["id"]
+        print("  ✅ Course creation successful")
+    else:
+        print(f"  ❌ Course creation failed: {response.status_code}")
+        return False
+    
+    # Test get courses
+    print("  📋 Getting courses...")
+    response = requests.get(f"{API_BASE_URL}/courses")
+    
+    if response.status_code == 200:
+        courses = response.json()
+        if any(course["id"] == course_id for course in courses):
+            print("  ✅ Get courses working correctly")
+        else:
+            print("  ❌ Created course not found")
+            return False
+    else:
+        print(f"  ❌ Get courses failed: {response.status_code}")
+        return False
+    
+    return True
+
+def test_tee_times():
+    """Test tee times endpoints"""
+    global tee_time_id
+    
+    print("\n⏰ Testing TeeTime...")
+    
+    # Test create tee time
+    print("  ➕ Creating tee time...")
+    tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    tee_time_data = {
+        "courseId": course_id,
+        "date": tomorrow,
+        "time": "09:00",
+        "maxSlots": 4
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.post(f"{API_BASE_URL}/tee-times", json=tee_time_data, headers=headers)
+    
+    if response.status_code == 201:
+        tee_time_id = response.json()["id"]
+        print("  ✅ Tee time creation successful")
+    else:
+        print(f"  ❌ Tee time creation failed: {response.status_code}")
+        return False
+    
+    # Test get tee times
+    print("  📋 Getting tee times...")
+    response = requests.get(f"{API_BASE_URL}/tee-times")
+    
+    if response.status_code == 200:
+        tee_times = response.json()
+        if any(tt["id"] == tee_time_id for tt in tee_times):
+            print("  ✅ Get tee times working correctly")
+        else:
+            print("  ❌ Created tee time not found")
+            return False
+    else:
+        print(f"  ❌ Get tee times failed: {response.status_code}")
+        return False
+    
+    # Test date filter
+    print("  🔍 Testing date filter...")
+    response = requests.get(f"{API_BASE_URL}/tee-times", params={"date": tomorrow})
+    
+    if response.status_code == 200:
+        tee_times = response.json()
+        if all(tt["date"] == tomorrow for tt in tee_times):
+            print("  ✅ Date filter working correctly")
+        else:
+            print("  ❌ Date filter not working")
+            return False
+    else:
+        print(f"  ❌ Date filter failed: {response.status_code}")
+        return False
+    
+    return True
+
+def test_bookings():
+    """Test bookings endpoints"""
+    global booking_id
+    
+    print("\n📅 Testing Bookings...")
+    
+    # Test create booking
+    print("  ➕ Creating booking...")
+    booking_data = {
+        "teeTimeId": tee_time_id,
+        "playersCount": 3,
+        "guestPlayers": [
+            {"name": "Pierre Martin", "handicapIndex": 12.0},
+            {"name": "Marie Kouassi", "handicapIndex": 18.5}
+        ]
+    }
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.post(f"{API_BASE_URL}/bookings", json=booking_data, headers=headers)
+    
+    if response.status_code == 201:
+        booking_id = response.json()["id"]
+        print("  ✅ Booking creation successful")
+    else:
+        print(f"  ❌ Booking creation failed: {response.status_code}")
+        print(f"      Response: {response.text}")
+        return False
+    
+    # Test get user bookings
+    print("  📋 Getting user bookings...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.get(f"{API_BASE_URL}/bookings", headers=headers)
+    
+    if response.status_code == 200:
+        bookings = response.json()
+        if any(booking["id"] == booking_id for booking in bookings):
+            print("  ✅ Get user bookings working correctly")
+        else:
+            print("  ❌ Created booking not found")
+            return False
+    else:
+        print(f"  ❌ Get user bookings failed: {response.status_code}")
+        return False
+    
+    # Verify slots were updated
+    print("  🔍 Verifying slot update...")
+    response = requests.get(f"{API_BASE_URL}/tee-times")
+    if response.status_code == 200:
+        tee_times = response.json()
+        tee_time = next((tt for tt in tee_times if tt["id"] == tee_time_id), None)
+        if tee_time and tee_time["availableSlots"] == 1:  # 4 - 3 = 1
+            print("  ✅ Tee time slots updated correctly")
+        else:
+            print("  ❌ Tee time slots not updated properly")
+            return False
+    
+    return True
+
+def test_booking_cancellation():
+    """Test booking cancellation"""
+    print("\n❌ Testing Booking Cancellation...")
+    
+    # Test cancel booking
+    print("  🗑️ Cancelling booking...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.delete(f"{API_BASE_URL}/bookings/{booking_id}", headers=headers)
+    
+    if response.status_code == 200:
+        print("  ✅ Booking cancellation successful")
+    else:
+        print(f"  ❌ Booking cancellation failed: {response.status_code}")
+        return False
+    
+    # Verify slots were restored
+    print("  🔍 Verifying slot restoration...")
+    response = requests.get(f"{API_BASE_URL}/tee-times")
+    if response.status_code == 200:
+        tee_times = response.json()
+        tee_time = next((tt for tt in tee_times if tt["id"] == tee_time_id), None)
+        if tee_time and tee_time["availableSlots"] == 4:  # Back to original
+            print("  ✅ Tee time slots restored correctly")
+        else:
+            print("  ❌ Tee time slots not restored properly")
+            return False
+    
+    return True
+
+def test_competitions():
+    """Test competitions endpoints"""
+    global competition_id
+    
+    print("\n🏆 Testing Competitions...")
+    
+    # Test create competition
+    print("  ➕ Creating competition...")
+    next_week = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+    competition_data = {
+        "name": "Tournoi Test IvoirGolf",
+        "description": "Compétition de test pour les APIs",
+        "date": next_week,
+        "maxParticipants": 4,
+        "entryFee": 25000.0
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.post(f"{API_BASE_URL}/competitions", json=competition_data, headers=headers)
+    
+    if response.status_code == 201:
+        competition_id = response.json()["id"]
+        print("  ✅ Competition creation successful")
+    else:
+        print(f"  ❌ Competition creation failed: {response.status_code}")
+        return False
+    
+    # Test get competitions
+    print("  📋 Getting competitions...")
+    response = requests.get(f"{API_BASE_URL}/competitions")
+    
+    if response.status_code == 200:
+        competitions = response.json()
+        if any(comp["id"] == competition_id for comp in competitions):
+            print("  ✅ Get competitions working correctly")
+        else:
+            print("  ❌ Created competition not found")
+            return False
+    else:
+        print(f"  ❌ Get competitions failed: {response.status_code}")
+        return False
+    
+    # Test register for competition
+    print("  📝 Registering for competition...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.post(f"{API_BASE_URL}/competitions/{competition_id}/register", headers=headers)
+    
+    if response.status_code == 200:
+        print("  ✅ Competition registration successful")
+    else:
+        print(f"  ❌ Competition registration failed: {response.status_code}")
+        return False
+    
+    # Test unregister from competition
+    print("  🚪 Unregistering from competition...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.delete(f"{API_BASE_URL}/competitions/{competition_id}/unregister", headers=headers)
+    
+    if response.status_code == 200:
+        print("  ✅ Competition unregistration successful")
+    else:
+        print(f"  ❌ Competition unregistration failed: {response.status_code}")
+        return False
+    
+    return True
+
+def test_subscriptions():
+    """Test subscriptions endpoints"""
+    global subscription_id
+    
+    print("\n💳 Testing Subscriptions...")
+    
+    # Get user ID
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.get(f"{API_BASE_URL}/auth/me", headers=headers)
+    if response.status_code != 200:
+        print("  ❌ Could not get user ID")
+        return False
+    user_id = response.json()["id"]
+    
+    # Test create subscription
+    print("  ➕ Creating subscription...")
+    start_date = datetime.now()
+    end_date = start_date + timedelta(days=365)
+    subscription_data = {
+        "userId": user_id,
+        "type": "Premium Annual",
+        "startDate": start_date.isoformat(),
+        "endDate": end_date.isoformat(),
+        "status": "active"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.post(f"{API_BASE_URL}/subscriptions", json=subscription_data, headers=headers)
+    
+    if response.status_code == 201:
+        subscription_id = response.json()["id"]
+        print("  ✅ Subscription creation successful")
+    else:
+        print(f"  ❌ Subscription creation failed: {response.status_code}")
+        return False
+    
+    # Test get my subscriptions
+    print("  📋 Getting my subscriptions...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.get(f"{API_BASE_URL}/subscriptions/my", headers=headers)
+    
+    if response.status_code == 200:
+        subscriptions = response.json()
+        if any(sub["id"] == subscription_id for sub in subscriptions):
+            print("  ✅ Get my subscriptions working correctly")
+        else:
+            print("  ❌ Created subscription not found")
+            return False
+    else:
+        print(f"  ❌ Get my subscriptions failed: {response.status_code}")
+        return False
+    
+    return True
+
+def test_admin_endpoints():
+    """Test admin endpoints"""
+    print("\n👑 Testing Admin Endpoints...")
+    
+    # Test get all users
+    print("  👥 Getting all users...")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.get(f"{API_BASE_URL}/admin/users", headers=headers)
+    
+    if response.status_code == 200:
+        users = response.json()
+        if len(users) >= 2:  # At least test user and admin
+            print("  ✅ Get all users working correctly")
+        else:
+            print("  ❌ Not enough users returned")
+            return False
+    else:
+        print(f"  ❌ Get all users failed: {response.status_code}")
+        return False
+    
+    # Test get all bookings
+    print("  📅 Getting all bookings...")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.get(f"{API_BASE_URL}/admin/bookings", headers=headers)
+    
+    if response.status_code == 200:
+        print("  ✅ Get all bookings working correctly")
+    else:
+        print(f"  ❌ Get all bookings failed: {response.status_code}")
+        return False
+    
+    # Test get all subscriptions
+    print("  💳 Getting all subscriptions...")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.get(f"{API_BASE_URL}/admin/subscriptions", headers=headers)
+    
+    if response.status_code == 200:
+        subscriptions = response.json()
+        if len(subscriptions) > 0:
+            print("  ✅ Get all subscriptions working correctly")
+        else:
+            print("  ❌ No subscriptions returned")
+            return False
+    else:
+        print(f"  ❌ Get all subscriptions failed: {response.status_code}")
+        return False
+    
+    # Test dashboard stats
+    print("  📊 Getting dashboard stats...")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = requests.get(f"{API_BASE_URL}/admin/dashboard", headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+        required_fields = ["totalUsers", "totalBookings", "activeSubscriptions", "upcomingCompetitions"]
+        if all(field in data for field in required_fields):
+            print("  ✅ Dashboard stats working correctly")
+            print(f"    📈 Stats: {data}")
+        else:
+            print("  ❌ Dashboard stats missing required fields")
+            return False
+    else:
+        print(f"  ❌ Dashboard stats failed: {response.status_code}")
+        return False
+    
+    # Test unauthorized access
+    print("  🚫 Testing unauthorized access...")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    response = requests.get(f"{API_BASE_URL}/admin/users", headers=headers)
+    
+    if response.status_code == 403:
+        print("  ✅ Unauthorized access properly blocked")
+    else:
+        print(f"  ❌ Authorization check failed: {response.status_code}")
+        return False
+    
+    return True
+
+def test_authorization():
+    """Test authorization scenarios"""
+    print("\n🔒 Testing Authorization...")
+    
+    # Test access without token
+    print("  🚫 Testing access without token...")
+    response = requests.get(f"{API_BASE_URL}/auth/me")
+    
+    if response.status_code == 401:
+        print("  ✅ No token access properly blocked")
+    else:
+        print(f"  ❌ No token check failed: {response.status_code}")
+        return False
+    
+    # Test access with invalid token
+    print("  🚫 Testing access with invalid token...")
+    headers = {"Authorization": "Bearer invalid_token_here"}
+    response = requests.get(f"{API_BASE_URL}/auth/me", headers=headers)
+    
+    if response.status_code == 401:
+        print("  ✅ Invalid token properly blocked")
+    else:
+        print(f"  ❌ Invalid token check failed: {response.status_code}")
+        return False
+    
+    return True
+
+def run_all_tests():
+    """Run all test suites"""
+    print("🚀 Starting IvoirGolf Backend API Tests")
+    print("=" * 50)
+    
+    test_results = []
+    
+    # Run all test suites
+    test_suites = [
+        ("Authentication", test_auth),
+        ("Courses", test_courses),
+        ("TeeTime", test_tee_times),
+        ("Bookings", test_bookings),
+        ("Booking Cancellation", test_booking_cancellation),
+        ("Competitions", test_competitions),
+        ("Subscriptions", test_subscriptions),
+        ("Admin Endpoints", test_admin_endpoints),
+        ("Authorization", test_authorization)
+    ]
+    
+    for suite_name, test_func in test_suites:
+        try:
+            result = test_func()
+            test_results.append((suite_name, result))
+        except Exception as e:
+            print(f"❌ {suite_name} test suite crashed: {e}")
+            test_results.append((suite_name, False))
+    
+    # Print summary
+    print("\n" + "=" * 50)
+    print("📊 TEST RESULTS SUMMARY")
+    print("=" * 50)
+    
+    passed = 0
+    failed = 0
+    
+    for suite_name, result in test_results:
+        if result:
+            print(f"✅ {suite_name}: PASSED")
+            passed += 1
+        else:
+            print(f"❌ {suite_name}: FAILED")
+            failed += 1
+    
+    print(f"\n📈 Total: {passed + failed} tests")
+    print(f"✅ Passed: {passed}")
+    print(f"❌ Failed: {failed}")
+    
+    if failed == 0:
+        print("\n🎉 ALL TESTS PASSED! Backend API is working correctly.")
+    else:
+        print(f"\n⚠️  {failed} test suite(s) failed. Please check the details above.")
+    
+    return failed == 0
+
+if __name__ == "__main__":
+    success = run_all_tests()
+    sys.exit(0 if success else 1)

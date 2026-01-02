@@ -145,8 +145,30 @@ async def get_current_user_info(current_user_email: str = Depends(get_current_us
         handicapIndex=user_dict.get("handicapIndex"),
         role=user_dict["role"],
         createdAt=user_dict["createdAt"],
-        isActive=user_dict.get("isActive", True)
+        isActive=user_dict.get("isActive", True),
+        profileImage=user_dict.get("profileImage")
     )
+
+@api_router.put("/auth/profile-image")
+async def update_profile_image(
+    profile_image: str,
+    current_user_email: str = Depends(get_current_user)
+):
+    """Update user profile image (base64)"""
+    user_dict = await db.users.find_one({"email": current_user_email})
+    if not user_dict:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Update profile image
+    await db.users.update_one(
+        {"email": current_user_email},
+        {"$set": {"profileImage": profile_image}}
+    )
+    
+    return {"message": "Profile image updated successfully"}
 
 # ============= COURSES ROUTES =============
 

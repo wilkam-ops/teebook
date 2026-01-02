@@ -13,6 +13,7 @@ interface User {
   role: 'user' | 'admin';
   createdAt: string;
   isActive: boolean;
+  profileImage?: string;
 }
 
 interface AuthContextType {

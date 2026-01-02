@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,62 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Alert
+  Alert,
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import api from '../../services/api';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [uploading, setUploading] = useState(false);
+  const [profileImage, setProfileImage] = useState(user?.profileImage);
+
+  const pickImage = async () => {
+    // Demander la permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission refusée', 'Nous avons besoin de la permission pour accéder à vos photos');
+      return;
+    }
+
+    // Ouvrir la galerie
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      await uploadProfileImage(result.assets[0].base64);
+    }
+  };
+
+  const uploadProfileImage = async (base64Image: string) => {
+    try {
+      setUploading(true);
+      const imageData = `data:image/jpeg;base64,${base64Image}`;
+      
+      await api.put('/auth/profile-image', {
+        profile_image: imageData
+      });
+      
+      setProfileImage(imageData);
+      Alert.alert('Succès', 'Photo de profil mise à jour!');
+    } catch (error: any) {
+      Alert.alert('Erreur', 'Impossible de mettre à jour la photo');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -39,7 +86,27 @@ export default function ProfileScreen() {
       <ScrollView>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person" size={48} color="#ffffff" />
+            {profileImage ? (
+              <Image 
+                source={{ uri: profileImage }} 
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={48} color="#ffffff" />
+              </View>
+            )}
+            <TouchableOpacity 
+              style={styles.cameraButton}
+              onPress={pickImage}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons name="camera" size={20} color="#ffffff" />
+              )}
+            </TouchableOpacity>
           </View>
           <Text style={styles.name}>
             {user?.firstName} {user?.lastName}
@@ -114,13 +181,38 @@ const styles = StyleSheet.create({
     paddingTop: 40
   },
   avatarContainer: {
+    position: 'relative',
+    marginBottom: 16
+  },
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    borderColor: '#ffffff'
+  },
+  avatarPlaceholder: {
     width: 96,
     height: 96,
     borderRadius: 48,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)'
+  },
+  cameraButton: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#059669',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#ffffff'
   },
   name: {
     fontSize: 24,

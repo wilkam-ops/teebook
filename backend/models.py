@@ -28,6 +28,7 @@ class UserBase(BaseModel):
     lastName: str
     handicapIndex: Optional[float] = None
     role: UserRole = UserRole.USER
+    profileImage: Optional[str] = None  # Base64 image
 
 class UserCreate(UserBase):
     password: str

@@ -9,20 +9,31 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  Alert,
+  Animated
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
   
   const { login } = useAuth();
   const router = useRouter();
+
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -46,161 +57,232 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+      <LinearGradient
+        colors={['#10b981', '#059669', '#047857']}
+        style={styles.gradient}
       >
-        <View style={styles.header}>
-          <Ionicons name="golf" size={64} color="#10b981" />
-          <Text style={styles.title}>TeeBook</Text>
-          <Text style={styles.subtitle}>Bienvenue de retour</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+            <View style={styles.logoContainer}>
+              <View style={styles.logoCircle}>
+                <Ionicons name="golf" size={48} color="#ffffff" />
+              </View>
+            </View>
+            <Text style={styles.title}>TeeBook</Text>
+            <Text style={styles.subtitle}>Réservez votre partie de golf</Text>
+          </Animated.View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#9ca3af"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              editable={!loading}
-            />
-          </View>
+          <Animated.View style={[styles.formCard, { opacity: fadeAnim }]}>
+            <Text style={styles.formTitle}>Connexion</Text>
+            
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail" size={20} color="#10b981" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Adresse email"
+                  placeholderTextColor="#9ca3af"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!loading}
+                />
+              </View>
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Mot de passe"
-              placeholderTextColor="#9ca3af"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              editable={!loading}
-            />
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed" size={20} color="#10b981" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mot de passe"
+                  placeholderTextColor="#9ca3af"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  editable={!loading}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye' : 'eye-off'}
+                    size={20}
+                    color="#6b7280"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
             <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                size={20}
-                color="#6b7280"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Se connecter</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Pas encore de compte ?</Text>
-            <TouchableOpacity
-              onPress={() => router.push('/auth/register')}
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
               disabled={loading}
+              activeOpacity={0.8}
             >
-              <Text style={styles.linkText}>S'inscrire</Text>
+              <LinearGradient
+                colors={['#10b981', '#059669']}
+                style={styles.buttonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>Se connecter</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Pas encore de compte ?</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/auth/register')}
+                disabled={loading}
+              >
+                <Text style={styles.linkText}>S'inscrire</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#ffffff'
+    flex: 1
+  },
+  gradient: {
+    flex: 1
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24
+    padding: 24,
+    paddingTop: 60
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48
+    marginBottom: 40
+  },
+  logoContainer: {
+    marginBottom: 24
+  },
+  logoCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)'
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginTop: 16
+    fontSize: 42,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 8,
+    letterSpacing: 1
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
-    marginTop: 8
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500'
   },
-  form: {
-    width: '100%'
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 24,
+    textAlign: 'center'
+  },
+  inputWrapper: {
+    marginBottom: 16
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 2,
     borderColor: '#e5e7eb',
-    marginBottom: 16,
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
+    height: 60
   },
   inputIcon: {
     marginRight: 12
   },
   input: {
     flex: 1,
-    height: 56,
     fontSize: 16,
-    color: '#111827'
+    color: '#111827',
+    fontWeight: '500'
   },
   eyeIcon: {
     padding: 8
   },
   button: {
-    backgroundColor: '#10b981',
-    borderRadius: 12,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8
+    marginTop: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4
   },
   buttonDisabled: {
     opacity: 0.6
   },
+  buttonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    gap: 8
+  },
   buttonText: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600'
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24
+    marginTop: 28,
+    gap: 6
   },
   footerText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#6b7280',
-    marginRight: 4
+    fontWeight: '500'
   },
   linkText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#10b981',
-    fontWeight: '600'
+    fontWeight: '700'
   }
 });
